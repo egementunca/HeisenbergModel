@@ -31,6 +31,31 @@ def startPool(J, p, q, size, l_prec):
 	np.random.shuffle(pool)
 	return pool
 
+def startPool_Thermal(J, p, g, size, l_prec):
+
+	pool = np.zeros((size, l_prec))
+
+	delta = g*J
+	thermal_prob = np.exp(-delta)
+
+	ferro_lfc = rg.lfc_initialize(J, l_prec)
+	antiferro_lfc = rg.lfc_initialize(-J, l_prec)
+
+	lfc0 = np.zeros(l_prec)
+	lfc0[0] += 1
+
+	q_size = int(round(thermal_prob*size))
+	pool[:q_size, ::] = lfc0
+
+	remainingSize = int(size-q_size)
+	ferroSize = int(np.around((1-p)*remainingSize))
+
+	pool[q_size:q_size+ferroSize, ::] = ferro_lfc
+	pool[q_size+ferroSize:, ::] = antiferro_lfc
+
+	np.random.shuffle(pool)
+	return pool
+
 #Bond Move for pool: Creates a pool n times  bond moved lfc's
 #(n = scaling factor^(dimension-1))
 def poolBM(pool, n):
@@ -110,11 +135,15 @@ def rgTransform(pool, dim, n):
 	return pool_transformed
 
 #Main function to track RG flows
-def rgTrajectory(J, p, q, n, dim, pool_size, l_prec, rg_step):
+def rgTrajectory(J, p, q, g, n, dim, pool_size, l_prec, rg_step, Thermal):
 
 	LFC_flow = []
 
-	pool = startPool(J, p, q, pool_size, l_prec)
+	if Thermal:
+		pool = startPool_Thermal(J, p, g, pool_size, l_prec)
+	else:
+		pool = startPool(J, p, q, pool_size, l_prec)
+
 	LFC_flow.append(pool)
 
 	for i in range(rg_step):
