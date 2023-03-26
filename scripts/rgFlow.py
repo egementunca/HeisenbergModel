@@ -29,31 +29,7 @@ def startPool(J, p, q, size, l_prec):
 	pool[q_size+ferroSize:, ::] = antiferro_lfc
 
 	np.random.shuffle(pool)
-	return pool
 
-def startPool_Thermal(J, p, g, size, l_prec):
-
-	pool = np.zeros((size, l_prec))
-
-	delta = g*J
-	thermal_prob = np.exp(-delta)
-
-	ferro_lfc = rg.lfc_initialize(J, l_prec)
-	antiferro_lfc = rg.lfc_initialize(-J, l_prec)
-
-	lfc0 = np.zeros(l_prec)
-	lfc0[0] += 1
-
-	q_size = int(round(thermal_prob*size))
-	pool[:q_size, ::] = lfc0
-
-	remainingSize = int(size-q_size)
-	ferroSize = int(np.around((1-p)*remainingSize))
-
-	pool[q_size:q_size+ferroSize, ::] = ferro_lfc
-	pool[q_size+ferroSize:, ::] = antiferro_lfc
-
-	np.random.shuffle(pool)
 	return pool
 
 #Bond Move for pool: Creates a pool n times  bond moved lfc's
@@ -124,6 +100,20 @@ def poolDEC(pool, dim):
 
 	return pools[-1]
 
+def vacancyStep(pool, J, g, dim):
+
+	size, l_prec = len(pool), len(pool[0])
+	vacancy_decimation = []
+	for i in range(size):
+		ix1, ix2, ix3 = random.randint(0,size-1), random.randint(0,size-1), random.randint(0,size-1)
+		lfc1, lfc2, lfc3 = pool[ix1], pool[ix2], pool[ix3]
+
+		delta = g*J
+		lfc_dec = rg.decimateVacancy(lfc1,lfc2,lfc3,J,delta)
+		vacancy_decimation.append(lfc_dec)
+
+	return vacancy_decimation
+
 #Renormalization Group with given Bond Moving and Decimaiton numbers
 def rgTransform(pool, dim, n):
 
@@ -134,15 +124,21 @@ def rgTransform(pool, dim, n):
 
 	return pool_transformed
 
+def rgTransformVacancy(pool, J, g, dim, n):
+
+	random.seed(17)
+	pool_transformed = vacancyStep(pool, J, g, dim)
+	random.seed(34)
+	pool_transformed = poolBM(pool_transformed, n)
+
+	return pool_transformed
+
 #Main function to track RG flows
-def rgTrajectory(J, p, q, g, n, dim, pool_size, l_prec, rg_step, Thermal):
+def rgTrajectory(J, p, q, n, dim, pool_size, l_prec, rg_step):
 
 	LFC_flow = []
 
-	if Thermal:
-		pool = startPool_Thermal(J, p, g, pool_size, l_prec)
-	else:
-		pool = startPool(J, p, q, pool_size, l_prec)
+	pool = startPool(J, p, q, pool_size, l_prec)
 
 	LFC_flow.append(pool)
 
@@ -152,3 +148,28 @@ def rgTrajectory(J, p, q, g, n, dim, pool_size, l_prec, rg_step, Thermal):
 		pool = rg_pool
 
 	return np.array(LFC_flow)
+
+#Main function to track RG flows
+def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
+
+	LFC_flow = []
+
+	pool = startPool(J, p, q, pool_size, l_prec)
+	
+	LFC_flow.append(pool)
+
+	for i in range(rg_step):
+
+		if i == 0:
+			rg_pool = rgTransformVacancy(pool, J, g, dim, n)
+			LFC_flow.append(rg_pool)
+			pool = rg_pool
+		
+		else:
+			rg_pool = rgTransform(pool, dim, n)
+			LFC_flow.append(rg_pool)
+			pool = rg_pool
+
+	return np.array(LFC_flow)
+
+

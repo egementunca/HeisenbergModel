@@ -12,18 +12,19 @@ import numpy as np
 from scipy.special import spherical_jn
 import numba
 
-import sys
-sys.path.append('../')
+#import sys
+#sys.path.append('../')
 #Clebsch Gordan coefficients tracked up to (l1,l2,l)==(50,50,50)
-clebsch_gordan = np.load('./data/cleb.npy')
+clebsch_gordan = np.load('../data/cleb.npy')
 
 #Creates Legendre Fourier coefficients with given J to
 #express our exponantiated hamiltonian in series form.
 def lfc_initialize(J, l_prec):
 	x = np.arange(l_prec)
 	x = np.real((2*x+1)*(1j**(x))*spherical_jn(x,-1j*J))
-	y = np.amax(np.abs(x))
-	return x/y
+	return x
+	#y = np.amax(np.abs(x))
+	#return x/y
 
 #Bond Move Process of Renormalization Group
 #Takes 2 LFC groups and returns "bond-moved" LFC group
@@ -37,8 +38,9 @@ def bond_move(lfc1, lfc2, l_prec):
 				x = lfc1[l1]*lfc2[l2]*clebsch_gordan[l1,l2,l]
 				val += x
 		lfc_bond_moved[l] += val
-	y = np.amax(np.abs(lfc_bond_moved))
-	return lfc_bond_moved/y
+	return lfc_bond_moved
+	#y = np.amax(np.abs(lfc_bond_moved))
+	#return lfc_bond_moved/y
 
 #Decimation Process of Renormalization Group
 #Takes 2 LFC groups and returns decimated LFC group
@@ -49,3 +51,28 @@ def decimate(lfc1, lfc2):
 	lfc_decimated = (lfc1*lfc2)/(2*lfc_decimated+1)
 	x = np.amax(np.abs(lfc_decimated))
 	return lfc_decimated/x
+
+@numba.jit()
+def decimateVacancy(lfc1, lfc2, lfc3, J, delta):
+	l_prec = len(lfc1)
+
+	lfc_decimated = np.arange(l_prec, dtype=np.float64)
+	lfc_decimated = (lfc1*lfc2)/(2*lfc_decimated+1)
+	lfc_decimated = (lfc_decimated*lfc3)/(2*np.arange(l_prec, dtype=np.float64)+1)
+	
+	lfc_delta = np.zeros(l_prec, dtype=np.float64)
+	lfc_delta[0] = np.exp(-2*delta)
+
+	lfc_combined = bond_move(lfc_decimated, lfc_delta, l_prec)
+	
+	lfc_1 = np.zeros(l_prec, dtype=np.float64)
+	lfc_1[0] += 1
+
+	lfc_2, lfc_3 = np.zeros(l_prec, dtype=np.float64), np.zeros(l_prec, dtype=np.float64)
+	J1, J3 = J*np.sign(lfc1[1]), J*np.sign(lfc3[1])
+	lfc_2[0] += np.exp(-delta+J1)
+	lfc_3[0] += np.exp(-delta+J3)
+
+	lfc = lfc_combined+lfc_1+lfc_2+lfc_3
+	return lfc/max(lfc)
+
