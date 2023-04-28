@@ -22,7 +22,7 @@ def checkPhase(g, p, n, q, dim, pool_size, l_prec, rg_step, iter_num):
 	return data
 
 def phase_diagram_deltavsTc(p, q, n, dim, pool_size, l_prec, rg_step, iter_num):
-	g_vals = np.linspace(-5, 1.5, 101)
+	g_vals = np.linspace(.58, .59, 21)
 	j_vals = np.zeros(len(g_vals))
 	
 	for i,g in enumerate(g_vals):
