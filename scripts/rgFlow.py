@@ -28,8 +28,6 @@ def startPool(J, p, q, size, l_prec):
 	pool[q_size:q_size+ferroSize, ::] = ferro_lfc
 	pool[q_size+ferroSize:, ::] = antiferro_lfc
 
-	np.random.shuffle(pool)
-
 	return pool
 
 #Bond Move for pool: Creates a pool n times  bond moved lfc's
