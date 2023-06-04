@@ -66,8 +66,8 @@ def decimateVacancy(lfc1, lfc2, lfc3, J, delta):
 		lfc_1[0] += 1
 
 		lfc_2, lfc_3 = np.zeros(l_prec), np.zeros(l_prec)
-		lfc_2[0] += np.exp(-delta)*lfc2[0]
-		lfc_3[0] += np.exp(-delta)*lfc3[0]
+		lfc_2[0] += np.exp(-delta)*(lfc2[0]/np.sqrt(4*np.pi))
+		lfc_3[0] += np.exp(-delta)*(lfc3[0]/np.sqrt(4*np.pi))
 
 		lfc = lfc_combined+lfc_1+lfc_2+lfc_3
 		x = np.amax(np.abs(lfc))
