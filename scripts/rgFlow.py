@@ -91,7 +91,7 @@ def rgTransform(pool, dim, n):
 
 def rgTransformVacancy(pool, J, g, dim, n):
 
-	random.seed(17)
+	random.seed(21)
 	pool_transformed = vacancyStep(pool, J, g, dim)
 	random.seed(34)
 	pool_transformed = poolBM(pool_transformed, n)
