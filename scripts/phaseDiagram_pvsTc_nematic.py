@@ -10,7 +10,6 @@ def checkPhase(p, n, q, dim, pool_size, l_prec, rg_step, iter_num):
 	for i in range(iter_num):
 		jNew = (jFerro+jNematic)/2
 		f = flow.rgTrajectory(J=jNew, p=p, q=q, n=n, dim=dim, pool_size=pool_size, l_prec=l_prec, rg_step=rg_step)
-		f = np.array(f)
 		avg_lfc = np.sum(abs(f[-1]),axis=0)/pool_size
 		avg_lfc = avg_lfc/max(abs(avg_lfc))
 		if (sum(avg_lfc) < 15.37):

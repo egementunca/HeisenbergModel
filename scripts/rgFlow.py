@@ -2,6 +2,8 @@
 Classical Heisenberg Model on Hierarchical Lattice with Quenched Randomness
 The code creates sample pools of LFC groups that represents Ferromagnetic and Antiferromagnetic
 distributions (+J and -J respectively) and performs Renormalization Group on the pool
+
+Vacancy Model Solution performs same calculations
 """
 import RenormGroupFunctions as rg
 import numpy as np
@@ -9,6 +11,7 @@ import random
 
 #Creates a pool of LFC groups with given J, size, and
 #probability (p) of consisting symmetrical antiferromagnetic LFC's
+#vacancy rate (q) is the ratio of the pool with no bonds
 def startPool(J, p, q, size, l_prec):
 
 	pool = np.zeros((size, l_prec))
@@ -65,6 +68,7 @@ def poolDEC(pool, dim):
 
 	return pools[-1]
 
+#first decimation step for BEG model hamiltonain with Heisenberg interactions with b=3
 def vacancyStep(pool, J, g, dim):
 
 	size, l_prec = len(pool), len(pool[0])
@@ -79,6 +83,76 @@ def vacancyStep(pool, J, g, dim):
 
 	return vacancy_decimation
 
+#nth (n!=1) decimation step for BEG model hamiltonain with Heisenberg interactions
+#bonds either exist or does not depending on the function of delta 
+def poolDECVacancy(pool, dim, delta):
+	
+	size, l_prec = len(pool), len(pool[0])
+	pools = []
+	pools.append(pool)
+
+	lfc_vacancy = np.zeros(l_prec)
+	lfc_vacancy[0] += 1
+
+	r_threshold = np.exp(-2*delta)/(1+2*np.exp(-delta)+np.exp(-2*delta))
+
+	for i in range(dim-1):
+		dec_step = []
+		for j in range(size):
+			r1, r2 = np.random.random(), np.random.random()
+			ix1, ix2 = random.randint(0,size-1), random.randint(0,size-1)
+			if r1 <= r_threshold:
+				lfc1 = pools[0][ix1]
+			else:
+				lfc1 = lfc_vacancy
+			if i==0:
+				if r2 <= r_threshold:
+					lfc2 = pools[i][ix2]
+				else:
+					lfc2 = lfc_vacancy
+			else:
+				lfc2 = pools[i][ix2]
+			lfc_dec = rg.decimate(lfc1,lfc2)
+			dec_step.append(lfc_dec)
+		pools.append(dec_step)
+
+	return pools[-1]
+
+#nth (n!=1) bond move step for BEG model hamiltonain with Heisenberg interactions
+#bonds either exist or does not depending on the function of delta
+def poolBMVacancy(pool, n, delta):
+	
+	size, l_prec = len(pool), len(pool[0])
+	pools = []
+	pools.append(pool)
+
+	lfc_vacancy = np.zeros(l_prec)
+	lfc_vacancy[0] += 1
+
+	r_threshold = np.exp(-2*delta)/(1+2*np.exp(-delta)+np.exp(-2*delta))
+
+	for i in range(n-1):
+		bm_step = []
+		for j in range(size):
+
+			r1, r2 = np.random.random(), np.random.random()
+			if r1 <= r_threshold:
+				lfc1 = pools[0][random.randint(0,size-1)]
+			else:
+				lfc1 = lfc_vacancy
+			if i==0:
+				if r2 <= r_threshold:
+					lfc2 = pools[i][random.randint(0,size-1)]
+				else:
+					lfc2 = lfc_vacancy
+			else:
+				lfc2 = pools[i][random.randint(0,size-1)]
+
+			lfc_bm = rg.bond_move(lfc1,lfc2,l_prec)
+			bm_step.append(lfc_bm)
+		pools.append(bm_step)
+	return pools[-1]
+
 #Renormalization Group with given Bond Moving and Decimaiton numbers
 def rgTransform(pool, dim, n):
 
@@ -89,12 +163,25 @@ def rgTransform(pool, dim, n):
 
 	return pool_transformed
 
-def rgTransformVacancy(pool, J, g, dim, n):
-
+#First step for BEG model with Heisenberg interactions
+def rgTransformVacancy1(pool, J, g, dim, n):
+	
+	delta = J*g
 	random.seed(21)
 	pool_transformed = vacancyStep(pool, J, g, dim)
 	random.seed(34)
-	pool_transformed = poolBM(pool_transformed, n)
+	pool_transformed = poolBMVacancy(pool_transformed, n, delta)
+
+	return pool_transformed
+
+#nth step for BEG model with Heisenberg interactions
+def rgTransformVacancy2(pool, J, g, dim, n):
+	
+	delta = J*g
+	random.seed(21)
+	pool_transformed = poolDECVacancy(pool, dim, delta)
+	random.seed(34)
+	pool_transformed = poolBMVacancy(pool_transformed, n, delta)
 
 	return pool_transformed
 
@@ -114,7 +201,7 @@ def rgTrajectory(J, p, q, n, dim, pool_size, l_prec, rg_step):
 
 	return np.array(LFC_flow)
 
-#Main function to track RG flows
+#Main function to track RG flows in BEG case
 def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
 
 	LFC_flow = []
@@ -126,18 +213,20 @@ def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
 	for i in range(rg_step):
 
 		if i == 0:
-			rg_pool = rgTransformVacancy(pool, J, g, dim, n)
+			rg_pool = rgTransformVacancy1(pool, J, g, dim, n)
 			LFC_flow.append(rg_pool)
 			pool = rg_pool
 		
 		else:
-			rg_pool = rgTransform(pool, dim, n)
+			rg_pool = rgTransformVacancy2(pool, J, g, dim, n)
 			LFC_flow.append(rg_pool)
 			pool = rg_pool
 
 	return np.array(LFC_flow)
 
+#HELPER FUNCTIONS TO ANALYZE FLOWS
 
+#mix 2 near trajectories at a point
 def mixPool(pool1, pool2):
 	
 	new_pool = np.zeros(shape=pool1.shape)
@@ -146,6 +235,7 @@ def mixPool(pool1, pool2):
 
 	return new_pool
 
+#Continue RG trajectory between of give two pools at a step
 def rgTrajectoryContinue(pool1, pool2, g, p, q, n, dim, pool_size, l_prec, rg_step):
 
 	LFC_flow = []

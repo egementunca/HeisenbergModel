@@ -14,10 +14,10 @@ import numba
 
 import scipy.integrate as integrate
 
-#import sys
-#sys.path.append('../')
+import sys
+sys.path.append('../')
 #Clebsch Gordan coefficients tracked up to (l1,l2,l)==(50,50,50)
-clebsch_gordan = np.load('../data/cleb.npy')
+clebsch_gordan = np.load('./data/cleb.npy')
 
 #Creates Legendre Fourier coefficients with given J to
 #express our exponantiated hamiltonian in series form.
@@ -53,64 +53,7 @@ def decimate(lfc1, lfc2):
 	return lfc_decimated/x
 	#return lfc_decimated
 
-from scipy.special import eval_legendre
 
-def helper(lfc, gamma):
-    val = 0
-    for l in range(len(lfc)):
-        val += lfc[l]*eval_legendre(l,np.cos(gamma))
-    return val
-
-def decimateVacancy(lfc1, lfc2, lfc3, J, delta):
-
-		l_prec = len(lfc1)
-		odd_nums = 2*np.arange(l_prec)+1
-
-		lfc_decimated = (lfc1*lfc2*lfc3)/(odd_nums)**2
-
-		lfc_combined = np.exp(-2*delta)*lfc_decimated
-		
-		lfc_1 = np.zeros(l_prec)
-		lfc_1[0] += 1
-
-		lfc_2, lfc_3 = np.zeros(l_prec), np.zeros(l_prec)
-		lfc_2[0] += np.exp(-delta)*(lfc2[0]/(np.sqrt(4*np.pi)))
-		lfc_3[0] += np.exp(-delta)*(lfc3[0]/(np.sqrt(4*np.pi)))
-
-		lfc = lfc_combined+lfc_1+lfc_2+lfc_3
-
-		x_axis = np.linspace(0,2*np.pi,1000)
-		y1 = helper(lfc_1,x_axis)
-		y2 = helper(lfc_2,x_axis)
-		y3 = helper(lfc_3,x_axis)
-		y4 = helper(lfc_combined,x_axis)
-
-		probs = []
-
-		probs.append(integrate.simpson(y1,x_axis))
-		probs.append(integrate.simpson(y2,x_axis))
-		probs.append(integrate.simpson(y3,x_axis))
-		probs.append(integrate.simpson(y4,x_axis))
-		
-		probs = np.array(probs)
-		probsSum = sum(probs)
-		probs = probs/probsSum
-		
-		print(probs)
-		print(sum(probs))
-
-		xi = np.random.random()
-
-		if xi < probs[0]:
-			return lfc_1/np.amax(np.abs(lfc_1))
-		if xi >= probs[0] and xi<(probs[0]+probs[1]):
-			return lfc_2/np.amax(np.abs(lfc_2))
-		if xi >= (probs[0]+probs[1]) and xi<(probs[0]+probs[1]+probs[2]):
-			return lfc_3/np.amax(np.abs(lfc_3))
-		if xi >= (probs[0]+probs[1]+probs[2]):
-			return lfc_combined/np.amax(np.abs(lfc_combined))
-
-"""
 @numba.jit()
 def decimateVacancy(lfc1, lfc2, lfc3, J, delta):
 
@@ -125,12 +68,10 @@ def decimateVacancy(lfc1, lfc2, lfc3, J, delta):
 		lfc_1[0] += 1
 
 		lfc_2, lfc_3 = np.zeros(l_prec), np.zeros(l_prec)
-		lfc_2[0] += np.exp(-delta)*(lfc2[0]/np.sqrt(4*np.pi))
-		lfc_3[0] += np.exp(-delta)*(lfc3[0]/np.sqrt(4*np.pi))
+		lfc_2[0] += np.exp(-delta)*(lfc2[0]*4*np.pi)
+		lfc_3[0] += np.exp(-delta)*(lfc3[0]*4*np.pi)
 
 		lfc = (lfc_combined+lfc_1+lfc_2+lfc_3)
-		return lfc
 		x = np.amax(np.abs(lfc))
 	
-		return lfc/x"""
-
+		return lfc/x
