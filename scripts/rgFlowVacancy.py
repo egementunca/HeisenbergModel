@@ -54,14 +54,14 @@ def vacancyStep(pool, J, g, dim):
 		delta = g*J
 		lfc_dec, delta_ = rg.decimateVacancy(lfc1,lfc2,lfc3,delta)
 		vacancy_decimation.append(lfc_dec)
-		delta_pool.append(3*delta+delta_)
+		delta_pool.append(3*delta+(delta_/dim**(dim)))
 
 	return vacancy_decimation, delta_pool
 
 
 #nth (n!=1) decimation step for BEG model hamiltonain with Heisenberg interactions
 #bonds either exist or does not depending on the function of delta 
-def poolDECVacancy(pool, delta_pool, dim):
+def poolDECVacancy(pool, delta_pool, dim, rg_step):
 	
 	size, l_prec = len(pool), len(pool[0])
 	pools = []
@@ -100,7 +100,7 @@ def poolDECVacancy(pool, delta_pool, dim):
 
 			lfc_dec, delta_ = rg.decimate(lfc1,lfc2)
 			dec_step.append(lfc_dec)
-			delta_step.append(delta1+delta2+delta_)
+			delta_step.append(delta1+delta2+(delta_/dim**(dim*rg_step)))
 		pools.append(dec_step)
 		delta_pools.append(delta_step)
 
@@ -166,11 +166,11 @@ def rgTransformVacancy1(pool, J, g, dim, n):
 	return (pool_transformed, delta_pool)
 
 #nth step for BEG model with Heisenberg interactions
-def rgTransformVacancy2(pool, delta_pool, J, g, dim, n):
+def rgTransformVacancy2(pool, delta_pool, J, g, dim, n, rg_step):
 	
 	delta = J*g
 	random.seed(21)
-	pool_transformed, delta_pool_rg = poolDECVacancy(pool, delta_pool, dim)
+	pool_transformed, delta_pool_rg = poolDECVacancy(pool, delta_pool, dim, rg_step)
 	random.seed(34)
 	pool_transformed, delta_pool_rg = poolBMVacancy(pool_transformed, delta_pool_rg, n)
 
@@ -192,7 +192,7 @@ def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
 			pool = rg_pool
 		
 		else:
-			rg_pool, rg_delta = rgTransformVacancy2(pool, rg_delta, J, g, dim, n)
+			rg_pool, rg_delta = rgTransformVacancy2(pool, rg_delta, J, g, dim, n, i+1)
 			LFC_flow.append(rg_pool)
 			pool = rg_pool
 
