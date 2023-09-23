@@ -39,4 +39,4 @@ def phase_diagram_deltavsTc(p, q, n, dim, pool_size, l_prec, rg_step, iter_num):
 	np.save('deltavsTc_p{}.npy'.format(p), (g_vals, j_vals))
 	return 0
 
-phase_diagram_deltavsTc(p=0.5, q=0, n=9, dim=3, pool_size=30000, l_prec=21, rg_step=30, iter_num=30)
+phase_diagram_deltavsTc(p=0.1, q=0, n=9, dim=3, pool_size=30000, l_prec=21, rg_step=30, iter_num=30)

@@ -20,7 +20,7 @@ def checkPhase(p, n, q, dim, pool_size, l_prec, rg_step, iter_num):
 	return data
 
 def phase_diagram_qvsTc(p, n, dim, pool_size, l_prec, rg_step, iter_num):
-	q_vals = np.linspace(0, .7, 71)
+	q_vals = np.linspace(0, .64, 65)
 	j_vals = np.zeros(len(q_vals))
 	
 	for i,q in enumerate(q_vals):
@@ -29,5 +29,4 @@ def phase_diagram_qvsTc(p, n, dim, pool_size, l_prec, rg_step, iter_num):
 	np.save('../data/qvsTc_p{}.npy'.format(p), (q_vals, j_vals))
 	return 0
 
-phase_diagram_qvsTc(p=.5, n=9, dim=3, pool_size=30000, l_prec=21, rg_step=30, iter_num=30)
-phase_diagram_qvsTc(p=0, n=9, dim=3, pool_size=30000, l_prec=21, rg_step=30, iter_num=30)
+phase_diagram_qvsTc(p=.1, n=9, dim=3, pool_size=30000, l_prec=21, rg_step=30, iter_num=30)

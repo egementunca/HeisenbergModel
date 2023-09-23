@@ -9,6 +9,13 @@ import RenormGroupFunctions as rg
 import numpy as np
 import random
 
+def probFunc(delta):
+	if delta>=200:
+		return 0
+	if delta<=-200:
+		return 1
+	return np.exp(-2*delta)/(1+2*np.exp(-delta)+np.exp(-2*delta))
+
 #Creates a pool of LFC groups with given J, size, and
 #probability (p) of consisting symmetrical antiferromagnetic LFC's
 #vacancy rate (q) is the ratio of the pool with no bonds
@@ -94,7 +101,7 @@ def poolDECVacancy(pool, dim, delta):
 	lfc_vacancy = np.zeros(l_prec)
 	lfc_vacancy[0] += 1
 
-	r_threshold = np.exp(-2*delta)/(1+2*np.exp(-delta)+np.exp(-2*delta))
+	r_threshold = probFunc(delta)
 
 	for i in range(dim-1):
 		dec_step = []
@@ -129,7 +136,7 @@ def poolBMVacancy(pool, n, delta):
 	lfc_vacancy = np.zeros(l_prec)
 	lfc_vacancy[0] += 1
 
-	r_threshold = np.exp(-2*delta)/(1+2*np.exp(-delta)+np.exp(-2*delta))
+	r_threshold = probFunc(delta)
 
 	for i in range(n-1):
 		bm_step = []
@@ -163,28 +170,6 @@ def rgTransform(pool, dim, n):
 
 	return pool_transformed
 
-#First step for BEG model with Heisenberg interactions
-def rgTransformVacancy1(pool, J, g, dim, n):
-	
-	delta = J*g
-	random.seed(21)
-	pool_transformed = vacancyStep(pool, J, g, dim)
-	random.seed(34)
-	pool_transformed = poolBMVacancy(pool_transformed, n, delta)
-
-	return pool_transformed
-
-#nth step for BEG model with Heisenberg interactions
-def rgTransformVacancy2(pool, J, g, dim, n):
-	
-	delta = J*g
-	random.seed(21)
-	pool_transformed = poolDECVacancy(pool, dim, delta)
-	random.seed(34)
-	pool_transformed = poolBMVacancy(pool_transformed, n, delta)
-
-	return pool_transformed
-
 #Main function to track RG flows
 def rgTrajectory(J, p, q, n, dim, pool_size, l_prec, rg_step):
 
@@ -200,56 +185,3 @@ def rgTrajectory(J, p, q, n, dim, pool_size, l_prec, rg_step):
 		pool = rg_pool
 
 	return np.array(LFC_flow)
-
-#Main function to track RG flows in BEG case
-def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
-
-	LFC_flow = []
-
-	pool = startPool(J, p, q, pool_size, l_prec)
-	
-	LFC_flow.append(pool)
-
-	for i in range(rg_step):
-
-		if i == 0:
-			rg_pool = rgTransformVacancy1(pool, J, g, dim, n)
-			LFC_flow.append(rg_pool)
-			pool = rg_pool
-		
-		else:
-			rg_pool = rgTransformVacancy2(pool, J, g, dim, n)
-			LFC_flow.append(rg_pool)
-			pool = rg_pool
-
-	return np.array(LFC_flow)
-
-#HELPER FUNCTIONS TO ANALYZE FLOWS
-
-#mix 2 near trajectories at a point
-def mixPool(pool1, pool2):
-	
-	new_pool = np.zeros(shape=pool1.shape)
-	new_pool[len(pool1)//2:,::] = pool1[len(pool1)//2:,::]
-	new_pool[:len(pool1)//2,::] = pool2[:len(pool1)//2,::]
-
-	return new_pool
-
-#Continue RG trajectory between of give two pools at a step
-def rgTrajectoryContinue(pool1, pool2, g, p, q, n, dim, pool_size, l_prec, rg_step):
-
-	LFC_flow = []
-
-	pool = mixPool(pool1, pool2)
-	
-	LFC_flow.append(pool)
-
-	for i in range(rg_step):
-
-		rg_pool = rgTransform(pool, dim, n)
-		LFC_flow.append(rg_pool)
-		pool = rg_pool
-
-	return np.array(LFC_flow)
-
-

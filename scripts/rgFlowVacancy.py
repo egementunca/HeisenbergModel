@@ -198,33 +198,3 @@ def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
 
 
 	return np.array(LFC_flow)
-
-#HELPER FUNCTIONS TO ANALYZE FLOWS
-
-#mix 2 near trajectories at a point
-def mixPool(pool1, pool2):
-	
-	new_pool = np.zeros(shape=pool1.shape)
-	new_pool[len(pool1)//2:,::] = pool1[len(pool1)//2:,::]
-	new_pool[:len(pool1)//2,::] = pool2[:len(pool1)//2,::]
-
-	return new_pool
-
-#Continue RG trajectory between of give two pools at a step
-def rgTrajectoryContinue(pool1, pool2, g, p, q, n, dim, pool_size, l_prec, rg_step):
-
-	LFC_flow = []
-
-	pool = mixPool(pool1, pool2)
-	
-	LFC_flow.append(pool)
-
-	for i in range(rg_step):
-
-		rg_pool = rgTransform(pool, dim, n)
-		LFC_flow.append(rg_pool)
-		pool = rg_pool
-
-	return np.array(LFC_flow)
-
-

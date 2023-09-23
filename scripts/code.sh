@@ -26,10 +26,10 @@
 #SBATCH --job-name=heisenberg
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --partition=long
-#SBATCH --time=07-00
+#SBATCH --partition=longer
+#SBATCH --time=30-00
 #SBATCH --output=out_msg.out
 #SBATCH --mail-type=End
 #SBATCH --mail-user=egementunca@gmail.com
-#SBATCH --mem-per-cpu=32G
-python phaseDiagram_pvsTc.py
+#SBATCH --mem-per-cpu=16G
+python phaseDiagram_qvsTc.py
