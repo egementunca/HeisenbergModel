@@ -12,8 +12,6 @@ import numpy as np
 from scipy.special import spherical_jn
 import numba
 
-import scipy.integrate as integrate
-
 import sys
 sys.path.append('../')
 #Clebsch Gordan coefficients tracked up to (l1,l2,l)==(50,50,50)
@@ -50,9 +48,17 @@ def decimate(lfc1, lfc2):
 	lfc_decimated = np.arange(l_prec, dtype=np.float64)
 	lfc_decimated = (lfc1*lfc2)/(2*lfc_decimated+1)
 	x = np.amax(np.abs(lfc_decimated))
-	return (lfc_decimated/x, 0.5*np.log(x))
+	return (lfc_decimated/x, np.log(x))
 	#return lfc_decimated
 
+
+@numba.jit()
+def decimate3(lfc1, lfc2, lfc3):
+	l_prec = len(lfc1)
+	lfc_decimated = np.arange(l_prec, dtype=np.float64)
+	lfc_decimated = (lfc1*lfc2*lfc3)/((2*lfc_decimated+1)**2)
+	x = np.amax(np.abs(lfc_decimated))
+	return (lfc_decimated/x, np.log(x))
 
 @numba.jit()
 def decimateVacancy(lfc1, lfc2, lfc3, delta):
@@ -62,16 +68,16 @@ def decimateVacancy(lfc1, lfc2, lfc3, delta):
 
 		lfc_decimated = (lfc1*lfc2*lfc3)/(odd_nums)**2
 
-		lfc_combined = np.exp(-2*delta)*lfc_decimated
+		lfc_combined = np.exp(-4*delta)*lfc_decimated
 		
 		lfc_1 = np.zeros(l_prec)
 		lfc_1[0] += 1
 
 		lfc_2, lfc_3 = np.zeros(l_prec), np.zeros(l_prec)
-		lfc_2[0] += np.exp(-delta)*(lfc2[0]*4*np.pi)
-		lfc_3[0] += np.exp(-delta)*(lfc3[0]*4*np.pi)
+		lfc_2[0] += np.exp(-2*delta)*lfc2[0]
+		lfc_3[0] += np.exp(-2*delta)*lfc3[0]
 
 		lfc = (lfc_combined+lfc_1+lfc_2+lfc_3)
 		x = np.amax(np.abs(lfc))
 	
-		return (lfc/x,  0.5*np.log(x))
+		return (lfc/x,  np.log(x))

@@ -54,7 +54,7 @@ def vacancyStep(pool, J, g, dim):
 		delta = g*J
 		lfc_dec, delta_ = rg.decimateVacancy(lfc1,lfc2,lfc3,delta)
 		vacancy_decimation.append(lfc_dec)
-		delta_pool.append(3*delta+(delta_/dim**(dim)))
+		delta_pool.append(2*delta - delta_) # Delta(14) = Delta(12) + Delta(34) - log( max(Lambda) ) 
 
 	return vacancy_decimation, delta_pool
 
@@ -72,39 +72,45 @@ def poolDECVacancy(pool, delta_pool, dim, rg_step):
 	lfc_vacancy = np.zeros(l_prec)
 	lfc_vacancy[0] += 1
 
-	for i in range(dim-1):
-		dec_step = []
-		delta_step = []
+	dec_step = []
+	delta_step = []
+	for j in range(size):
+		idx1, idx2, idx3 = random.randint(0,size-1), random.randint(0,size-1), random.randint(0,size-1)
+		
+		lfc1, delta1 = pools[0][idx1], delta_pools[0][idx1]
+		lfc2, delta2 = pools[0][idx2], delta_pools[0][idx2]
+		lfc3, delta3 = pools[0][idx3], delta_pools[0][idx3]
 
-		for j in range(size):
-			idx1, idx2 = random.randint(0,size-1), random.randint(0,size-1)
-			
-			lfc1, delta1 = pools[0][idx1], delta_pools[0][idx1]
-			lfc2, delta2 = pools[i][idx2], delta_pools[i][idx2]
+		r_threshold1 = probFunc(delta1)
+		r_threshold2 = probFunc(delta2)
+		r_threshold3 = probFunc(delta3)
 
-			r_threshold1 = probFunc(delta1)
-			r_threshold2 = probFunc(delta2)
+		r1 = np.random.random()
+		if r1 <= r_threshold1:
+			pass
+		else:
+			lfc1 = lfc_vacancy
 
-			r1 = np.random.random()
-			if r1 <= r_threshold1:
-				pass
-			else:
-				lfc1 = lfc_vacancy
+		r2 = np.random.random()
+		if r2 <= r_threshold2:
+			pass
+		else:
+			lfc2 = lfc_vacancy
 
-			if i==0:
-				r2 = np.random.random()
-				if r2 <= r_threshold2:
-					pass
-				else:
-					lfc2 = lfc_vacancy
+		r3 = np.random.random()
+		if r3 <= r_threshold3:
+			pass
+		else:
+			lfc1 = lfc_vacancy
 
-			lfc_dec, delta_ = rg.decimate(lfc1,lfc2)
-			dec_step.append(lfc_dec)
-			delta_step.append(delta1+delta2+(delta_/dim**(dim*rg_step)))
-		pools.append(dec_step)
-		delta_pools.append(delta_step)
+		lfc_dec, delta_ = rg.decimate3(lfc1,lfc2,lfc3)
+		dec_step.append(lfc_dec)
+		delta_step.append(delta1 + delta3 - delta_)
+	pools.append(dec_step)
+	delta_pools.append(delta_step)
 
 	return pools[-1], delta_pools[-1]
+
 
 #nth (n!=1) bond move step for BEG model hamiltonain with Heisenberg interactions
 #bonds either exist or does not depending on the function of delta
@@ -149,6 +155,7 @@ def poolBMVacancy(pool, delta_pool, n):
 			lfc_bm = rg.bond_move(lfc1,lfc2,l_prec)
 			bm_step.append(lfc_bm)
 			delta_step.append(delta1+delta2)
+
 		pools.append(bm_step)
 		delta_pools.append(delta_step)
 
