@@ -187,6 +187,7 @@ def rgTransformVacancy2(pool, delta_pool, J, g, dim, n, rg_step):
 def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
 
 	LFC_flow = []
+	DELTA_flow = []
 
 	pool = startPool(J, p, q, pool_size, l_prec)
 	LFC_flow.append(pool)
@@ -196,12 +197,14 @@ def rgTrajectoryVacancy(J, g, p, q, n, dim, pool_size, l_prec, rg_step):
 		if i == 0:
 			rg_pool, rg_delta = rgTransformVacancy1(pool, J, g, dim, n)
 			LFC_flow.append(rg_pool)
+			DELTA_flow.append(rg_delta)
 			pool = rg_pool
 		
 		else:
 			rg_pool, rg_delta = rgTransformVacancy2(pool, rg_delta, J, g, dim, n, i+1)
 			LFC_flow.append(rg_pool)
+			DELTA_flow.append(rg_delta)
 			pool = rg_pool
 
 
-	return np.array(LFC_flow)
+	return np.array(LFC_flow), np.array(DELTA_flow)
